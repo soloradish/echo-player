@@ -33,6 +33,7 @@ describe("settings modal", () => {
     fireEvent.click(settingsButton);
 
     const dialog = screen.getByRole("dialog", { name: "设置" });
+    expect(within(dialog).getByTestId("settings-version").textContent).toBe("Echo Player · 开发版本");
     expect(within(dialog).queryByLabelText("音量")).toBeNull();
     expect(within(dialog).queryByLabelText("字幕偏移")).toBeNull();
     expect(within(dialog).queryByText("字幕")).toBeNull();

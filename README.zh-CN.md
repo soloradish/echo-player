@@ -138,6 +138,9 @@ npm run test:e2e:tauri
 | `npm run tauri:dev` | 启动原生开发应用 |
 | `npm test` | 单次运行全部 Vitest 前端测试 |
 | `npm run build` | 进行类型检查并构建前端 |
+| `npm run version:check` | 检查所有应用版本来源是否同步 |
+| `npm run version:check -- --tag vX.Y.Z` | 检查同步版本是否与发布 tag 一致 |
+| `npm run version:set -- X.Y.Z` | 在所有清单和锁文件中设置稳定应用版本 |
 | `npm run ffmpeg:prepare` | 下载并校验锁定的 FFmpeg 产物 |
 | `npm run build:e2e` | 生成测试素材并构建启用 E2E 的应用 |
 | `npm run test:e2e:tauri` | 运行 Windows 原生 WebdriverIO 测试 |
@@ -185,13 +188,21 @@ cargo audit
 
 ## 发布流程
 
-以下三个位置的版本号必须保持一致：
+Echo Player 使用稳定的 `MAJOR.MINOR.PATCH` 版本，首次公开发布为 `0.1.0`。在 `0.x` 阶段，Bug、安全、性能、翻译、依赖和安装包修复升级 `PATCH`；用户功能和破坏性行为变化升级 `MINOR`。`1.0.0` 表示进入稳定兼容阶段，之后的破坏性兼容变化升级 `MAJOR`。只有文档、测试或不影响交付物的 CI 变化时不需要发布。当前暂不接受预发布标识符。
 
-- `package.json`
-- `src-tauri/Cargo.toml`
-- `src-tauri/tauri.conf.json`
+使用仓库 skill 分析 `main` 上的变化并推荐下一个版本：
 
-所有 CI 门禁通过后，创建并推送 `v*` 标签。发布工作流会构建未签名的 NSIS 安装包，并在 `windows-2022` 和 `windows-2025` 上静默安装、启动和卸载。来自 `windows-2022` 的产物会连同 SHA-256 校验和及 GitHub artifact attestation 一起发布。
+```text
+$bump-echo-version 分析 main 并推荐 Echo Player 的下一个版本。
+```
+
+在使用类似 `$bump-echo-version 确认 0.2.0，基于 b509b75` 的回复确认精确版本号和分析所基于的提交前，skill 不会修改仓库。确认后，它会创建 `codex/release-vX.Y.Z` 分支、同步版本、更新 `CHANGELOG.md`、运行本地检查并创建 draft 发布 PR。它不会合并 PR、创建 tag 或发布 Release。
+
+`src-tauri/tauri.conf.json` 是产品版本的权威来源。`npm run version:set -- X.Y.Z` 会将其与 `package.json`、`package-lock.json`、`src-tauri/Cargo.toml` 和 `src-tauri/Cargo.lock` 同步。提交发布改动前运行 `npm run version:check`。
+
+发布 PR 合并且对应的 `main` CI 通过后，在该 `main` 提交上创建并推送 annotated `vX.Y.Z` tag。发布工作流会拒绝版本不一致、轻量 tag、未包含在 `main` 中的 tag，以及已经存在 GitHub Release 的版本。随后它会构建未签名的 NSIS 安装包，在 `windows-2022` 和 `windows-2025` 上静默安装、启动和卸载，并发布来自 `windows-2022` 的产物、SHA-256 校验和及 GitHub artifact attestation。
+
+不要移动已发布 tag 或替换已发布附件。临时工作流故障可以针对未改变的 tag 重跑；如果必须修改源码，则准备下一个 patch 版本。
 
 ## 许可证
 

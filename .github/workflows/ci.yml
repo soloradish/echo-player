@@ -3,35 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
-    paths:
-      - ".github/workflows/ci.yml"
-      - ".nvmrc"
-      - "e2e/**"
-      - "index.html"
-      - "package.json"
-      - "package-lock.json"
-      - "rust-toolchain.toml"
-      - "scripts/**"
-      - "src/**"
-      - "src-tauri/**"
-      - "tsconfig.json"
-      - "vite.config.ts"
-      - "wdio.conf.ts"
   pull_request:
-    paths:
-      - ".github/workflows/ci.yml"
-      - ".nvmrc"
-      - "e2e/**"
-      - "index.html"
-      - "package.json"
-      - "package-lock.json"
-      - "rust-toolchain.toml"
-      - "scripts/**"
-      - "src/**"
-      - "src-tauri/**"
-      - "tsconfig.json"
-      - "vite.config.ts"
-      - "wdio.conf.ts"
 
 permissions:
   contents: read
@@ -52,6 +24,8 @@ jobs:
         run: rustup show
       - name: Install JavaScript dependencies
         run: npm ci
+      - name: Validate application version
+        run: npm run version:check
       - name: Prepare pinned FFmpeg
         run: npm run ffmpeg:prepare
       - name: Audit JavaScript dependencies

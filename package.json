@@ -13,6 +13,8 @@
     "build:tauri": "npm run ffmpeg:prepare && npm run build",
     "ffmpeg:prepare": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-ffmpeg.ps1",
     "test": "vitest run",
+    "version:set": "node scripts/version.mjs set",
+    "version:check": "node scripts/version.mjs check",
     "test:e2e:tauri": "wdio run wdio.conf.ts",
     "test:fixtures": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-test-fixtures.ps1",
     "build:e2e": "npm run ffmpeg:prepare && npm run test:fixtures && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-e2e.ps1",

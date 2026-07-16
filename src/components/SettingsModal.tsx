@@ -6,6 +6,8 @@ import type { AppLocale, CacheStats } from "../types";
 const PLAYBACK_SPEEDS = [0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1, 1.1, 1.2, 1.25, 1.5, 1.75, 2];
 
 interface SettingsModalProps {
+  appVersion: string | null;
+  isDevelopmentBuild: boolean;
   language: AppLocale;
   speed: number;
   loopGap: number;
@@ -20,6 +22,8 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({
+  appVersion,
+  isDevelopmentBuild,
   language,
   speed,
   loopGap,
@@ -164,6 +168,13 @@ export function SettingsModal({
             </label>
           </fieldset>
         </div>
+        <footer className="settings-version" data-testid="settings-version">
+          {isDevelopmentBuild
+            ? t("settings.developmentVersion")
+            : appVersion
+              ? t("settings.version", { version: appVersion })
+              : t("settings.versionUnavailable")}
+        </footer>
       </section>
     </div>
   );

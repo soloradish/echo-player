@@ -4,6 +4,13 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+function ConvertFrom-RegistryPathValue {
+  param([string]$Value)
+
+  return $Value.Trim().Trim('"')
+}
+
 $installerPath = (Resolve-Path -LiteralPath $Installer).Path
 $installerProcess = Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait -PassThru
 if ($installerProcess.ExitCode -ne 0) {
@@ -23,10 +30,12 @@ if (-not $registration) {
 
 $candidates = @()
 if ($registration.InstallLocation) {
-  $candidates += Join-Path ([string]$registration.InstallLocation) "Echo Player.exe"
+  $installLocation = ConvertFrom-RegistryPathValue ([string]$registration.InstallLocation)
+  $candidates += Join-Path $installLocation "echo-player.exe"
+  $candidates += Join-Path $installLocation "Echo Player.exe"
 }
-$candidates += Join-Path $env:LOCALAPPDATA "Echo Player/Echo Player.exe"
-$candidates += Join-Path $env:LOCALAPPDATA "Programs/Echo Player/Echo Player.exe"
+$candidates += Join-Path $env:LOCALAPPDATA "Echo Player/echo-player.exe"
+$candidates += Join-Path $env:LOCALAPPDATA "Programs/Echo Player/echo-player.exe"
 $executable = $candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Leaf) } | Select-Object -First 1
 if (-not $executable) {
   throw "The installed Echo Player executable was not found."

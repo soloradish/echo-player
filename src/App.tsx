@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Channel, convertFileSrc, invoke, isTauri } from "@tauri-apps/api/core";
+import { getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { Waveform } from "./components/Waveform";
@@ -89,11 +90,21 @@ function PlayerApp() {
   const [playlistOpen, setPlaylistOpen] = useState(false);
   const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
   const [cacheClearing, setCacheClearing] = useState(false);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(() => document.fullscreenElement !== null);
   const store = usePlayerStore();
   const isDemo = import.meta.env.DEV && new URLSearchParams(window.location.search).get("demo") === "1";
   const demoPlaying = isDemo && new URLSearchParams(window.location.search).get("playing") === "1";
   const runningInTauri = isTauri();
+
+  useEffect(() => {
+    if (!runningInTauri) return;
+    let active = true;
+    void getVersion()
+      .then((version) => { if (active) setAppVersion(version); })
+      .catch(() => { if (active) setAppVersion(null); });
+    return () => { active = false; };
+  }, [runningInTauri]);
 
   const activeSegment = useMemo(
     () => currentSegmentIndex(store.segments, store.currentTime),
@@ -836,6 +847,8 @@ function PlayerApp() {
 
       {settingsOpen && (
         <SettingsModal
+          appVersion={appVersion}
+          isDevelopmentBuild={!runningInTauri}
           language={store.preferences.language}
           speed={store.preferences.speed}
           loopGap={store.preferences.loopGap}

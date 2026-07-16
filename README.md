@@ -138,6 +138,9 @@ npm run test:e2e:tauri
 | `npm run tauri:dev` | Start the native development application |
 | `npm test` | Run all Vitest frontend tests once |
 | `npm run build` | Type-check and build the frontend |
+| `npm run version:check` | Verify that every application version source is synchronized |
+| `npm run version:check -- --tag vX.Y.Z` | Verify synchronized versions against a release tag |
+| `npm run version:set -- X.Y.Z` | Set a stable application version in every manifest and lockfile |
 | `npm run ffmpeg:prepare` | Download and verify the pinned FFmpeg artifact |
 | `npm run build:e2e` | Generate fixtures and build the E2E-enabled application |
 | `npm run test:e2e:tauri` | Run native Windows WebdriverIO tests |
@@ -185,13 +188,21 @@ The main Tauri capability grants only event listen/unlisten and file-dialog acce
 
 ## Release process
 
-Keep the version synchronized in all three locations:
+Echo Player uses stable `MAJOR.MINOR.PATCH` versions. The first public release is `0.1.0`. During `0.x`, bug, security, performance, localization, dependency, and installer fixes increment `PATCH`; user features and breaking behavior changes increment `MINOR`. `1.0.0` begins the stable compatibility phase, after which breaking compatibility increments `MAJOR`. Documentation, test, or delivery-neutral CI changes do not require a release. Pre-release identifiers are not accepted yet.
 
-- `package.json`
-- `src-tauri/Cargo.toml`
-- `src-tauri/tauri.conf.json`
+Use the repository skill to analyze the changes on `main` and recommend the next version:
 
-After all CI gates pass, create and push a `v*` tag. The release workflow builds an unsigned NSIS installer, then silently installs, launches, and uninstalls it on both `windows-2022` and `windows-2025`. The `windows-2022` artifact is published with SHA-256 checksums and GitHub artifact attestation.
+```text
+$bump-echo-version Analyze main and recommend the next Echo Player version.
+```
+
+The skill does not modify the repository until its exact version and analyzed commit are confirmed with a reply such as `$bump-echo-version 确认 0.2.0，基于 b509b75`. After confirmation it creates a `codex/release-vX.Y.Z` branch, synchronizes the version, updates `CHANGELOG.md`, runs the local checks, and opens a draft release PR. It never merges the PR, creates a tag, or publishes a Release.
+
+`src-tauri/tauri.conf.json` is the authoritative product version. `npm run version:set -- X.Y.Z` synchronizes it with `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock`. Run `npm run version:check` before committing release changes.
+
+After the release PR is merged and the resulting `main` CI run passes, create and push an annotated `vX.Y.Z` tag on that `main` commit. The release workflow rejects mismatched versions, lightweight tags, tags outside `main`, and versions that already have a GitHub Release. It then builds an unsigned NSIS installer, silently installs, launches, and uninstalls it on both `windows-2022` and `windows-2025`, and publishes the `windows-2022` artifact with SHA-256 checksums and GitHub artifact attestation.
+
+Never move a published tag or replace published assets. Re-run a transiently failed workflow against the unchanged tag; if the source must change, prepare the next patch version instead.
 
 ## License
 

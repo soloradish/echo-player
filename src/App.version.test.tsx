@@ -1,0 +1,71 @@
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import App from "./App";
+import { usePlayerStore } from "./store";
+
+const mocks = vi.hoisted(() => ({
+  getVersion: vi.fn(),
+  invoke: vi.fn(),
+}));
+
+vi.mock("@tauri-apps/api/app", () => ({ getVersion: mocks.getVersion }));
+vi.mock("@tauri-apps/api/core", () => ({
+  Channel: class<T> { onmessage = (_event: T) => {}; },
+  convertFileSrc: (path: string) => `asset://${path}`,
+  isTauri: () => true,
+  invoke: mocks.invoke,
+}));
+vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
+vi.mock("@tauri-apps/api/webviewWindow", () => ({
+  getCurrentWebviewWindow: () => ({ onDragDropEvent: () => Promise.resolve(() => {}) }),
+}));
+
+beforeAll(() => {
+  class ResizeObserverMock {
+    observe() {}
+    disconnect() {}
+  }
+  vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+  vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  Object.defineProperty(HTMLMediaElement.prototype, "play", { configurable: true, value: vi.fn(() => Promise.resolve()) });
+  Object.defineProperty(HTMLMediaElement.prototype, "pause", { configurable: true, value: vi.fn() });
+});
+
+beforeEach(() => {
+  localStorage.clear();
+  window.history.pushState({}, "", "/?demo=1");
+  mocks.getVersion.mockReset();
+  mocks.invoke.mockReset();
+  mocks.invoke.mockImplementation((command: string) => command === "get_analysis_cache_stats"
+    ? Promise.resolve({ entryCount: 0, usedBytes: 0, limitBytes: 512 * 1024 * 1024 })
+    : Promise.resolve(null));
+  usePlayerStore.setState({
+    preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "en" },
+    error: null,
+  });
+});
+
+afterEach(() => cleanup());
+
+describe("runtime application version", () => {
+  it("shows the version reported by the installed Tauri application", async () => {
+    mocks.getVersion.mockResolvedValue("0.1.0");
+    render(<App />);
+    await waitFor(() => expect(mocks.getVersion).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(within(screen.getByRole("dialog", { name: "Settings" })).getByTestId("settings-version").textContent)
+      .toBe("Echo Player · Version 0.1.0");
+  });
+
+  it("falls back without surfacing an application error when the version is unavailable", async () => {
+    mocks.getVersion.mockRejectedValue(new Error("version unavailable"));
+    render(<App />);
+    await waitFor(() => expect(mocks.getVersion).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(within(screen.getByRole("dialog", { name: "Settings" })).getByTestId("settings-version").textContent)
+      .toBe("Echo Player · Version unavailable");
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+});

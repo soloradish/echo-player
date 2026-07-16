@@ -11,6 +11,8 @@ function renderSettings(cacheDisabled = false) {
   render(
     <I18nProvider locale="en">
       <SettingsModal
+        appVersion="0.1.0"
+        isDevelopmentBuild={false}
         language="en"
         speed={1}
         loopGap={0}
@@ -29,6 +31,11 @@ function renderSettings(cacheDisabled = false) {
 }
 
 describe("analysis cache settings", () => {
+  it("shows the installed application version", () => {
+    renderSettings();
+    expect(screen.getByTestId("settings-version").textContent).toBe("Echo Player · Version 0.1.0");
+  });
+
   it("shows cache usage and clears saved analysis", () => {
     const onClearCache = renderSettings();
     expect(screen.getByText("12.5 MB of 512 MB · 3 files")).toBeTruthy();

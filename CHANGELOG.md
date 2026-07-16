@@ -4,6 +4,11 @@ All notable changes to Echo Player are documented here.
 
 ## [Unreleased]
 
+- Added synchronized application version tooling and guarded tagged-release validation.
+- Added the installed application version to Settings.
+- Added a repository skill that analyzes changes and prepares confirmed version-update pull requests.
+- Hardened the Windows installer smoke test for quoted registry paths and packaged executable naming.
+
 ## [0.1.0] - 2026-07-15
 
 - Added local audio and video playback with same-folder playlists.

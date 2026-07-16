@@ -18,7 +18,18 @@ if ($Force -or -not (Test-Path -LiteralPath $archive)) {
   Invoke-WebRequest -Uri $lock.url -OutFile $archive
 }
 
-$actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash.ToLowerInvariant()
+function Get-Sha256Hex([string]$Path) {
+  $stream = [System.IO.File]::OpenRead($Path)
+  $sha256 = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    return -join ($sha256.ComputeHash($stream) | ForEach-Object { $_.ToString('x2') })
+  } finally {
+    $sha256.Dispose()
+    $stream.Dispose()
+  }
+}
+
+$actualHash = Get-Sha256Hex $archive
 if ($actualHash -ne $lock.sha256) {
   throw "FFmpeg archive checksum mismatch. Expected $($lock.sha256), got $actualHash."
 }

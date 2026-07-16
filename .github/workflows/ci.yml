@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-test:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install Rust toolchain
+        run: rustup show
+      - name: Install JavaScript dependencies
+        run: npm ci
+      - name: Audit JavaScript dependencies
+        run: npm audit --audit-level=high
+      - name: Test and build frontend
+        run: |
+          npm test
+          npm run build
+      - name: Check Rust formatting
+        working-directory: src-tauri
+        run: cargo fmt --all -- --check
+      - name: Lint and test Rust backend
+        working-directory: src-tauri
+        run: |
+          cargo clippy --all-targets --locked -- -D warnings
+          cargo test --locked
+      - name: Audit Rust dependencies
+        working-directory: src-tauri
+        run: |
+          cargo install cargo-audit --locked
+          cargo audit
+      - name: Build E2E application
+        run: npm run build:e2e
+      - name: Run native Windows E2E tests
+        run: npm run test:e2e:tauri
+      - name: Upload E2E diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-diagnostics
+          path: |
+            e2e-results/
+            logs/
+          if-no-files-found: ignore
+          retention-days: 7

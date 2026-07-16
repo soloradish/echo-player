@@ -1,0 +1,7 @@
+{
+  "$schema": "../../src-tauri/gen/schemas/desktop-schema.json",
+  "identifier": "e2e-capability",
+  "description": "Test-only WebDriver permissions",
+  "windows": ["main"],
+  "permissions": ["wdio:default", "wdio-webdriver:default"]
+}

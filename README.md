@@ -4,6 +4,14 @@
 
 Echo Player is a Windows desktop media player built for language-learning workflows that depend on quick replay and precise repetition. Version 0.1.0 works with local audio and video, generates a waveform and pause-based segments with FFmpeg, and provides several ways to repeat a segment or an arbitrary selection.
 
+## Screenshots
+
+![Echo Player waveform and replay controls](docs/images/echo-player/waveform-overview.png)
+
+| Focused selection loop | Player settings |
+| --- | --- |
+| ![Echo Player repeating a selected waveform range](docs/images/echo-player/selection-loop.png) | ![Echo Player settings with language, loop gap, cache, and playback speed controls](docs/images/echo-player/player-settings.png) |
+
 ## Highlights
 
 - Open or drag in MP4, M4V, WebM, MP3, M4A, AAC, WAV, FLAC, and OGG files.

@@ -4,6 +4,14 @@
 
 Echo Player 是一款面向 Windows 的桌面媒体播放器，专门服务于需要快速重听和精确循环的语言学习场景。v0.1.0 支持本地音视频，通过 FFmpeg 生成波形和基于停顿的片段，并提供多种片段或任意区间循环方式。
 
+## 界面截图
+
+![Echo Player 波形与重听控制界面](docs/images/echo-player/waveform-overview.png)
+
+| 专注选区循环 | 播放器设置 |
+| --- | --- |
+| ![Echo Player 正在重复选定的波形范围](docs/images/echo-player/selection-loop.png) | ![Echo Player 的语言、循环间隔、缓存和播放速度设置](docs/images/echo-player/player-settings.png) |
+
 ## 主要功能
 
 - 打开或拖放 MP4、M4V、WebM、MP3、M4A、AAC、WAV、FLAC 和 OGG 文件。

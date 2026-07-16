@@ -5,6 +5,7 @@ src-tauri/.cache/
 src-tauri/resources/
 e2e/fixtures/generated/
 e2e-results/
+promo/
 logs/
 .cargo-target-validation/
 src-tauri/capabilities/e2e.generated.json

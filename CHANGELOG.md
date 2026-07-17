@@ -4,6 +4,8 @@ All notable changes to Echo Player are documented here.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-17
+
 - Added customizable shortcuts for play/pause, speech-segment navigation, replay, and loop-range switching.
 - Added a Settings action that restores playback, language, and keyboard preferences to their defaults.
 - Moved the default segment and loop shortcuts to A, D, and S, and prevented player shortcuts from activating or leaving focus on buttons.
@@ -23,5 +25,6 @@ All notable changes to Echo Player are documented here.
 - Bundled a pinned LGPL FFmpeg build for offline analysis.
 - Added native Windows E2E, dependency audits, and unsigned installer smoke tests.
 
-[Unreleased]: https://github.com/soloradish/echo-player/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/soloradish/echo-player/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/soloradish/echo-player/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/soloradish/echo-player/releases/tag/v0.1.0

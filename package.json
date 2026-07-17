@@ -1,7 +1,7 @@
 {
   "name": "echo-player",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "engines": {
     "node": "24.16.0"

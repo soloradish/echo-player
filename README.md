@@ -18,10 +18,13 @@ Echo Player is a Windows desktop media player built for language-learning workfl
 - Build a temporary playlist from supported files in the selected file's directory.
 - Generate waveforms and pause-based segments with the bundled FFmpeg analyzer.
 - Replay the current segment with preroll, move between segments, loop a segment or the full media, and create waveform A-B loops.
+- Customize core playback shortcuts for play/pause, previous or next speech segment, replay, and loop-range switching.
 - Adjust playback speed from 0.5x to 2.0x, volume, fullscreen mode, and the pause between loop iterations.
+- Restore playback, language, and keyboard preferences to their defaults from Settings.
+- Open another file from an explicit top-bar action, and use Help to report a problem, suggest an improvement, or visit the project page.
 - Use the interface in English, Simplified Chinese, Traditional Chinese, or French.
 
-Playlist discovery is intentionally non-recursive. Reaching the end of a media file stops playback instead of advancing automatically. Across launches, the application retains only volume, speed, loop-gap, and language preferences.
+Playlist discovery is intentionally non-recursive. Reaching the end of a media file stops playback instead of advancing automatically. Across launches, the application retains only volume, speed, loop-gap, language, and keyboard-shortcut preferences.
 
 ## Requirements
 
@@ -38,6 +41,10 @@ Official installers include the pinned LGPL FFmpeg executable. They are currentl
 - Node.js 24.16.0, pinned in `.nvmrc` and `package.json`
 - Rust 1.96.0 with `rustfmt` and `clippy`, pinned in `rust-toolchain.toml`
 - PowerShell for the repository scripts
+
+## Project page and feedback
+
+Visit the [Echo Player project page](https://lowid.me/en/echo-player/) for product and download information. Public problem reports and feature requests are handled through [GitHub Issues](https://github.com/soloradish/echo-player/issues/new/choose). A GitHub account is required; search existing issues first, include the application and Windows versions plus reproducible steps, and do not upload private media or sensitive information.
 
 ## Architecture
 

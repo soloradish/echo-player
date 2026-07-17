@@ -3,6 +3,9 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { loadPlayerPreferences, usePlayerStore } from "./store";
+import { DEFAULT_SHORTCUTS } from "./lib/shortcuts";
+
+const playMock = vi.fn(() => Promise.resolve());
 
 beforeAll(() => {
   class ResizeObserverMock {
@@ -12,13 +15,14 @@ beforeAll(() => {
   vi.stubGlobal("ResizeObserver", ResizeObserverMock);
   vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
   vi.stubGlobal("cancelAnimationFrame", vi.fn());
-  Object.defineProperty(HTMLMediaElement.prototype, "play", { configurable: true, value: vi.fn(() => Promise.resolve()) });
+  Object.defineProperty(HTMLMediaElement.prototype, "play", { configurable: true, value: playMock });
   Object.defineProperty(HTMLMediaElement.prototype, "pause", { configurable: true, value: vi.fn() });
 });
 
 beforeEach(() => {
+  playMock.mockClear();
   localStorage.clear();
-  usePlayerStore.setState({ preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "zh-CN" }, error: null });
+  usePlayerStore.setState({ preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "zh-CN", shortcuts: { ...DEFAULT_SHORTCUTS } }, error: null });
   window.history.pushState({}, "", "/?demo=1");
 });
 
@@ -43,12 +47,23 @@ describe("settings modal", () => {
     fireEvent.change(within(dialog).getByLabelText("段间停顿"), { target: { value: "1" } });
     fireEvent.change(within(dialog).getByLabelText("播放倍速"), { target: { value: "1.25" } });
 
-    expect(usePlayerStore.getState().preferences).toEqual({ volume: 0.85, speed: 1.25, loopGap: 1, language: "zh-CN" });
+    expect(usePlayerStore.getState().preferences).toEqual({ volume: 0.85, speed: 1.25, loopGap: 1, language: "zh-CN", shortcuts: DEFAULT_SHORTCUTS });
     expect((document.querySelector("video") as HTMLVideoElement).playbackRate).toBe(1.25);
     expect(JSON.parse(localStorage.getItem("echo-player-preferences") ?? "{}")).toMatchObject({ speed: 1.25, loopGap: 1 });
 
     fireEvent.click(within(dialog).getByRole("button", { name: "关闭设置" }));
     expect(screen.queryByRole("dialog", { name: "设置" })).toBeNull();
+    expect(document.activeElement).toBe(settingsButton);
+
+    expect(fireEvent.keyDown(settingsButton, { key: " ", code: "Space" })).toBe(false);
+    expect(playMock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("dialog", { name: "设置" })).toBeNull();
+    expect(document.activeElement).not.toBe(settingsButton);
+
+    settingsButton.focus();
+    expect(fireEvent.keyDown(settingsButton, { key: "x", code: "KeyX" })).toBe(true);
+    expect(document.activeElement).toBe(settingsButton);
+    expect(fireEvent.keyDown(settingsButton, { key: "Enter", code: "Enter" })).toBe(true);
     expect(document.activeElement).toBe(settingsButton);
   });
 
@@ -59,10 +74,10 @@ describe("settings modal", () => {
 
     let dialog = screen.getByRole("dialog", { name: "设置" });
     const closeButton = within(dialog).getByRole("button", { name: "关闭设置" });
-    const playbackSpeed = within(dialog).getByLabelText("播放倍速");
+    const restoreDefaults = within(dialog).getByRole("button", { name: "还原默认" });
     closeButton.focus();
     fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
-    expect(document.activeElement).toBe(playbackSpeed);
+    expect(document.activeElement).toBe(restoreDefaults);
     fireEvent.keyDown(dialog, { key: "Escape" });
     expect(screen.queryByRole("dialog", { name: "设置" })).toBeNull();
 
@@ -79,9 +94,46 @@ describe("settings modal", () => {
     usePlayerStore.setState({ preferences: loadPlayerPreferences(localStorage, ["zh-CN"]) });
     render(<App />);
 
-    expect(usePlayerStore.getState().preferences).toEqual({ volume: 0.4, speed: 1.5, loopGap: 0, language: "zh-CN" });
+    expect(usePlayerStore.getState().preferences).toEqual({ volume: 0.4, speed: 1.5, loopGap: 0, language: "zh-CN", shortcuts: DEFAULT_SHORTCUTS });
     fireEvent.click(screen.getByRole("button", { name: "设置" }));
     expect((screen.getByLabelText("段间停顿") as HTMLSelectElement).value).toBe("0");
+  });
+
+  it("records core shortcuts, rejects conflicts, and restores every preference default", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "设置" }));
+
+    const playShortcut = screen.getByRole("button", { name: "修改“播放或暂停”的快捷键" });
+    fireEvent.click(playShortcut);
+    expect(playShortcut.textContent).toBe("请按键…");
+    fireEvent.keyDown(playShortcut, { key: " ", code: "Space" });
+    expect(playShortcut.textContent).toBe("Space");
+    expect(usePlayerStore.getState().isPlaying).toBe(false);
+
+    fireEvent.click(playShortcut);
+    fireEvent.keyDown(playShortcut, { key: "k", code: "KeyK", ctrlKey: true });
+    expect(playShortcut.textContent).toBe("Ctrl+K");
+    expect(usePlayerStore.getState().preferences.shortcuts.playPause).toBe("Ctrl+KeyK");
+
+    const previousShortcut = screen.getByRole("button", { name: "修改“上一语音片段”的快捷键" });
+    fireEvent.click(previousShortcut);
+    fireEvent.keyDown(previousShortcut, { key: "k", code: "KeyK", ctrlKey: true });
+    expect(screen.getByRole("alert").textContent).toContain("Ctrl+K 已分配给“播放或暂停”");
+    expect(usePlayerStore.getState().preferences.shortcuts.previousSegment).toBe("KeyA");
+
+    fireEvent.change(screen.getByLabelText("段间停顿"), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText("播放倍速"), { target: { value: "1.5" } });
+    fireEvent.click(screen.getByRole("button", { name: "还原默认" }));
+
+    expect(usePlayerStore.getState().preferences).toEqual({
+      volume: 0.85,
+      speed: 1,
+      loopGap: 0,
+      language: "en",
+      shortcuts: DEFAULT_SHORTCUTS,
+    });
+    expect(usePlayerStore.getState().loop.gap).toBe(0);
+    expect(screen.getByRole("button", { name: "Restore defaults" })).toBeTruthy();
   });
 
   it("switches the whole interface language immediately and persists it", () => {

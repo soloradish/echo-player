@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { usePlayerStore } from "./store";
+import { DEFAULT_SHORTCUTS } from "./lib/shortcuts";
 import type { AnalysisEvent, WaveformData } from "./types";
 
 interface PendingAnalysis {
@@ -92,7 +93,7 @@ beforeEach(() => {
     error: null,
     playlist: [],
     currentPlaylistIndex: -1,
-    preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "en" },
+    preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "en", shortcuts: { ...DEFAULT_SHORTCUTS } },
   });
 });
 

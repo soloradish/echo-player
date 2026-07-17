@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { usePlayerStore } from "./store";
+import { DEFAULT_SHORTCUTS } from "./lib/shortcuts";
 
 beforeAll(() => {
   class ResizeObserverMock {
@@ -17,7 +18,7 @@ beforeAll(() => {
 afterEach(() => cleanup());
 
 beforeEach(() => {
-  usePlayerStore.setState({ preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "zh-CN" } });
+  usePlayerStore.setState({ preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "zh-CN", shortcuts: { ...DEFAULT_SHORTCUTS } } });
 });
 
 describe("playlist drawer", () => {

@@ -1,0 +1,86 @@
+name: Bug report
+description: Report a reproducible problem with Echo Player
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Echo Player. GitHub Issues are public. Do not upload private media, file paths, logs, or other sensitive information.
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: Existing reports
+      options:
+        - label: I searched the existing issues and did not find the same problem.
+          required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: Echo Player version
+      description: Find this in Help or Settings.
+      placeholder: e.g. 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: windows-version
+    attributes:
+      label: Windows version
+      placeholder: e.g. Windows 11 24H2
+    validations:
+      required: true
+  - type: dropdown
+    id: media-format
+    attributes:
+      label: Media format
+      options:
+        - MP4 / M4V
+        - WebM
+        - MP3
+        - M4A / AAC
+        - WAV
+        - FLAC
+        - OGG
+        - Not media-specific
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem
+      description: Describe what went wrong without including private media or sensitive information.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Press ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add non-sensitive logs, screenshots, or details that help reproduce the issue.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy
+      options:
+        - label: I confirmed that this report does not contain private media or sensitive information.
+          required: true

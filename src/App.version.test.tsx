@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { usePlayerStore } from "./store";
+import { DEFAULT_SHORTCUTS } from "./lib/shortcuts";
 
 const mocks = vi.hoisted(() => ({
   getVersion: vi.fn(),
@@ -42,7 +43,7 @@ beforeEach(() => {
     ? Promise.resolve({ entryCount: 0, usedBytes: 0, limitBytes: 512 * 1024 * 1024 })
     : Promise.resolve(null));
   usePlayerStore.setState({
-    preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "en" },
+    preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "en", shortcuts: { ...DEFAULT_SHORTCUTS } },
     error: null,
   });
 });

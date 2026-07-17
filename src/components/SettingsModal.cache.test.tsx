@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../i18n";
 import { SettingsModal } from "./SettingsModal";
+import { DEFAULT_SHORTCUTS } from "../lib/shortcuts";
 
 afterEach(() => cleanup());
 
@@ -16,12 +17,15 @@ function renderSettings(cacheDisabled = false) {
         language="en"
         speed={1}
         loopGap={0}
+        shortcuts={{ ...DEFAULT_SHORTCUTS }}
         cacheStats={{ entryCount: 3, usedBytes: 12.5 * 1024 * 1024, limitBytes: 512 * 1024 * 1024 }}
         cacheClearing={false}
         cacheDisabled={cacheDisabled}
         onLanguageChange={vi.fn()}
         onSpeedChange={vi.fn()}
         onLoopGapChange={vi.fn()}
+        onShortcutChange={vi.fn()}
+        onResetPreferences={vi.fn()}
         onClearCache={onClearCache}
         onClose={vi.fn()}
       />

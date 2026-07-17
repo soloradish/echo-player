@@ -3,6 +3,7 @@ import type { AppError, AppLocale, LoopState, PlayerPreferences, PlaylistItem, S
 import { OFF_LOOP } from "./types";
 import { playlistIndex } from "./lib/playlist";
 import { detectLocale, isAppLocale } from "./i18n";
+import { DEFAULT_SHORTCUTS, loadShortcutBindings } from "./lib/shortcuts";
 
 export const PREFERENCES_STORAGE_KEY = "echo-player-preferences";
 
@@ -31,6 +32,17 @@ export function loadPlayerPreferences(
     speed: finiteNumber(saved.speed, BASE_PREFERENCES.speed, (value) => value >= 0.5 && value <= 2),
     loopGap: finiteNumber(saved.loopGap, BASE_PREFERENCES.loopGap, (value) => LOOP_GAPS.has(value)),
     language: isAppLocale(saved.language) ? saved.language : detectLocale(languages),
+    shortcuts: loadShortcutBindings(saved.shortcuts),
+  };
+}
+
+export function createDefaultPlayerPreferences(
+  languages: readonly string[] = typeof navigator === "undefined" ? [] : navigator.languages,
+): PlayerPreferences {
+  return {
+    ...BASE_PREFERENCES,
+    language: detectLocale(languages),
+    shortcuts: { ...DEFAULT_SHORTCUTS },
   };
 }
 
@@ -62,6 +74,7 @@ interface PlayerStore {
   setSegments: (segments: Segment[]) => void;
   setLoop: (loop: LoopState) => void;
   setPreferences: (preferences: Partial<PlayerPreferences>) => void;
+  resetPreferences: () => void;
   setError: (error: AppError | null) => void;
   setPlaylist: (playlist: PlaylistItem[]) => void;
 }
@@ -147,6 +160,7 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   setSegments: (segments) => set({ segments }),
   setLoop: (loop) => set({ loop }),
   setPreferences: (preferences) => set((state) => ({ preferences: { ...state.preferences, ...preferences } })),
+  resetPreferences: () => set({ preferences: createDefaultPlayerPreferences() }),
   setError: (error) => set({ error }),
   setPlaylist: (playlist) => set((state) => ({
     playlist,

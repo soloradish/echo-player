@@ -3,6 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { detectLocale, I18nProvider, useI18n } from "./i18n";
 import { loadPlayerPreferences, PREFERENCES_STORAGE_KEY } from "./store";
+import { DEFAULT_SHORTCUTS } from "./lib/shortcuts";
 import type { AppLocale } from "./types";
 
 afterEach(() => cleanup());
@@ -35,6 +36,7 @@ describe("locale detection", () => {
       speed: 1.5,
       loopGap: 0.5,
       language: "zh-Hant",
+      shortcuts: DEFAULT_SHORTCUTS,
     });
 
     const oldStorage = { getItem: () => JSON.stringify({ volume: 0.3, speed: 1.25 }) };
@@ -43,6 +45,7 @@ describe("locale detection", () => {
       speed: 1.25,
       loopGap: 0,
       language: "fr",
+      shortcuts: DEFAULT_SHORTCUTS,
     });
   });
 
@@ -52,12 +55,14 @@ describe("locale detection", () => {
       speed: 1,
       loopGap: 0,
       language: "en",
+      shortcuts: DEFAULT_SHORTCUTS,
     });
     expect(loadPlayerPreferences({ getItem: () => JSON.stringify({ volume: 2, speed: 0, loopGap: -1, language: "es" }) }, ["zh-TW"])).toEqual({
       volume: 0.85,
       speed: 1,
       loopGap: 0,
       language: "zh-Hant",
+      shortcuts: DEFAULT_SHORTCUTS,
     });
   });
 });

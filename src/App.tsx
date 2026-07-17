@@ -6,10 +6,13 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { Waveform } from "./components/Waveform";
 import { PlaybackIcon } from "./components/PlaybackIcon";
 import { SettingsModal } from "./components/SettingsModal";
+import { HelpModal } from "./components/HelpModal";
 import { AnalysisProgress } from "./components/AnalysisProgress";
 import { ERROR_MESSAGE_KEYS, I18nProvider, useI18n } from "./i18n";
 import { currentSegmentIndex, formatTime } from "./lib/segments";
 import { sortPlaylist } from "./lib/playlist";
+import { formatShortcut, shortcutActionForEvent } from "./lib/shortcuts";
+import { openExternalUrl, projectUrlForLocale } from "./lib/externalLinks";
 import { MEDIA_EXTENSIONS, isSupportedMediaPath, isVideoPath } from "./mediaFormats";
 import { PREFERENCES_STORAGE_KEY, usePlayerStore } from "./store";
 import type { AnalysisEvent, AppError, CacheStats, LoopState, MediaContext, PlaylistItem, Segment, WaveformData } from "./types";
@@ -73,6 +76,7 @@ function PlayerApp() {
   const mediaRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
+  const helpButtonRef = useRef<HTMLButtonElement>(null);
   const playlistButtonRef = useRef<HTMLButtonElement>(null);
   const selectionPanelRef = useRef<HTMLElement>(null);
   const loopBusyRef = useRef(false);
@@ -87,6 +91,7 @@ function PlayerApp() {
   const [selection, setSelection] = useState<Selection | null>(null);
   const [selectionLoopSession, setSelectionLoopSession] = useState<SelectionLoopSession | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [playlistOpen, setPlaylistOpen] = useState(false);
   const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
   const [cacheClearing, setCacheClearing] = useState(false);
@@ -168,6 +173,11 @@ function PlayerApp() {
   const closeSettings = useCallback(() => {
     setSettingsOpen(false);
     settingsButtonRef.current?.focus();
+  }, []);
+
+  const closeHelp = useCallback(() => {
+    setHelpOpen(false);
+    helpButtonRef.current?.focus();
   }, []);
 
   const closePlaylist = useCallback(() => {
@@ -458,6 +468,17 @@ function PlayerApp() {
     }
   }, []);
 
+  const openExternal = useCallback(async (url: string) => {
+    try {
+      await openExternalUrl(url);
+    } catch (error) {
+      usePlayerStore.getState().setError({
+        code: "external_link_failed",
+        detail: error instanceof Error ? error.message : undefined,
+      });
+    }
+  }, []);
+
   const updateLoopGap = useCallback((gap: number) => {
     const actions = usePlayerStore.getState();
     actions.setPreferences({ loopGap: gap });
@@ -605,34 +626,61 @@ function PlayerApp() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         if (settingsOpen) closeSettings();
+        else if (helpOpen) closeHelp();
         else if (playlistOpen) closePlaylist();
         else if (selectionLoopSessionRef.current) finishSelectionLoop();
         else if (selection) setSelection(null);
         return;
       }
-      if (event.target instanceof HTMLElement && event.target.matches("input, select, button")) return;
+      const target = event.target;
+      if (settingsOpen || helpOpen || (target instanceof HTMLElement && (target.matches("input, select, textarea") || target.isContentEditable))) return;
+      const action = shortcutActionForEvent(store.preferences.shortcuts, event);
+      if (!action) return;
       if (selectionLoopSessionRef.current) {
-        if (event.code === "Space") {
+        if (action === "playPause") {
           event.preventDefault();
+          if (target instanceof HTMLButtonElement && document.activeElement === target) target.blur();
           togglePlayback();
         }
         return;
       }
-      if (event.code === "Space") { event.preventDefault(); togglePlayback(); }
-      else if (event.key === "ArrowLeft" && event.ctrlKey) jumpSegment(-1);
-      else if (event.key === "ArrowRight" && event.ctrlKey) jumpSegment(1);
-      else if (event.key === "ArrowLeft") seek(store.currentTime - 2);
-      else if (event.key === "ArrowRight") seek(store.currentTime + 2);
-      else if (event.key.toLowerCase() === "r") replay();
-      else if (event.key.toLowerCase() === "l") setLoopMode(store.loop.mode === "segment" ? "media" : "segment");
+      event.preventDefault();
+      if (target instanceof HTMLButtonElement && document.activeElement === target) target.blur();
+      if (action === "playPause") togglePlayback();
+      else if (action === "previousSegment") jumpSegment(-1);
+      else if (action === "nextSegment") jumpSegment(1);
+      else if (action === "replaySegment") replay();
+      else if (action === "toggleLoopRange") setLoopMode(store.loop.mode === "segment" ? "media" : "segment");
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   });
 
+  const helpDialog = helpOpen ? (
+    <HelpModal
+      appVersion={appVersion}
+      isDevelopmentBuild={!runningInTauri}
+      projectUrl={projectUrlForLocale(store.preferences.language)}
+      onOpenUrl={(url) => void openExternal(url)}
+      onClose={closeHelp}
+    />
+  ) : null;
+  const errorToast = store.error ? (
+    <div className="error-toast" role="alert">
+      <span>
+        <strong>{t(ERROR_MESSAGE_KEYS[store.error.code] ?? "error.unknown")}</strong>
+        {store.error.detail && <small>{store.error.detail}</small>}
+      </span>
+      <button onClick={() => store.setError(null)} aria-label={t("error.dismiss")}>×</button>
+    </div>
+  ) : null;
+
   if (!store.mediaPath) {
     return (
       <main className="empty-shell">
+        <button ref={helpButtonRef} className="empty-help-button" onClick={() => setHelpOpen(true)} aria-haspopup="dialog" aria-expanded={helpOpen}>
+          {t("top.help")}
+        </button>
         <div className="brand-mark">E</div>
         <h1>Echo Player</h1>
         <p>{t("empty.tagline")}</p>
@@ -648,6 +696,8 @@ function PlayerApp() {
             if (file) void openPath(file.name, URL.createObjectURL(file));
           }}
         />
+        {helpDialog}
+        {errorToast}
       </main>
     );
   }
@@ -659,16 +709,50 @@ function PlayerApp() {
   return (
     <main className="player-shell">
       <header className="topbar">
-        <button className="wordmark" onClick={pickMedia} title={t("top.openAnother")}>Echo</button>
+        <div className="topbar-primary">
+          <span className="wordmark" aria-label="Echo Player">Echo</span>
+          <button className="open-file-button" onClick={pickMedia} title={t("top.openAnother")}>
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M2.5 5.25h5l1.5 1.5h8.5v8.5a1.5 1.5 0 0 1-1.5 1.5H4a1.5 1.5 0 0 1-1.5-1.5v-10Z" />
+              <path d="M2.5 7.25h15" />
+            </svg>
+            {t("top.openFile")}
+          </button>
+        </div>
         <div className="file-title" title={store.mediaPath}>{store.mediaName}</div>
         <div className="top-actions">
-          <button ref={playlistButtonRef} className={playlistOpen ? "active" : ""} onClick={() => setPlaylistOpen((open) => !open)}>
+          <button
+            ref={playlistButtonRef}
+            className={playlistOpen ? "active" : ""}
+            onClick={() => {
+              setSettingsOpen(false);
+              setHelpOpen(false);
+              setPlaylistOpen((open) => !open);
+            }}
+          >
             {t("top.playlistCount", { count: formatNumber(store.playlist.length || 1) })}
+          </button>
+          <button
+            ref={helpButtonRef}
+            className={helpOpen ? "help-button active" : "help-button"}
+            onClick={() => {
+              setPlaylistOpen(false);
+              setSettingsOpen(false);
+              setHelpOpen(true);
+            }}
+            aria-haspopup="dialog"
+            aria-expanded={helpOpen}
+          >
+            {t("top.help")}
           </button>
           <button
             ref={settingsButtonRef}
             className={settingsOpen ? "active" : ""}
-            onClick={() => setSettingsOpen(true)}
+            onClick={() => {
+              setPlaylistOpen(false);
+              setHelpOpen(false);
+              setSettingsOpen(true);
+            }}
             aria-haspopup="dialog"
             aria-expanded={settingsOpen}
           >
@@ -771,7 +855,7 @@ function PlayerApp() {
             <button
               className="selection-loop-play"
               onClick={togglePlayback}
-              title={t("selection.playPauseTitle")}
+              title={t("selection.playPauseTitle", { shortcut: formatShortcut(store.preferences.shortcuts.playPause) })}
               aria-label={store.isPlaying ? t("selection.pause") : t("selection.continue")}
             >
               <PlaybackIcon playing={store.isPlaying} />
@@ -784,14 +868,14 @@ function PlayerApp() {
         ) : (
           <div className="primary-controls">
             <div className="transport-controls">
-              <button onClick={() => jumpSegment(-1)} disabled={activeSegment <= 0} title={t("transport.previousTitle")}>{t("transport.previous")}</button>
-              <button className="replay-button" onClick={replay} title={t("transport.replayTitle")}>
+              <button onClick={() => jumpSegment(-1)} disabled={activeSegment <= 0} title={t("transport.previousTitle", { shortcut: formatShortcut(store.preferences.shortcuts.previousSegment) })}>{t("transport.previous")}</button>
+              <button className="replay-button" onClick={replay} title={t("transport.replayTitle", { shortcut: formatShortcut(store.preferences.shortcuts.replaySegment) })}>
                 <span>↶</span> {t("transport.replay")}
               </button>
-              <button className="play-button" onClick={togglePlayback} title={t("transport.playPauseTitle")} aria-label={store.isPlaying ? t("transport.pause") : t("transport.play")}>
+              <button className="play-button" onClick={togglePlayback} title={t("transport.playPauseTitle", { shortcut: formatShortcut(store.preferences.shortcuts.playPause) })} aria-label={store.isPlaying ? t("transport.pause") : t("transport.play")}>
                 <PlaybackIcon playing={store.isPlaying} />
               </button>
-              <button onClick={() => jumpSegment(1)} disabled={activeSegment >= store.segments.length - 1} title={t("transport.nextTitle")}>{t("transport.next")}</button>
+              <button onClick={() => jumpSegment(1)} disabled={activeSegment >= store.segments.length - 1} title={t("transport.nextTitle", { shortcut: formatShortcut(store.preferences.shortcuts.nextSegment) })}>{t("transport.next")}</button>
             </div>
             <div className="loop-control" role="group" aria-label={t("loop.range")}>
               <div className="loop-control-heading" aria-hidden="true">
@@ -808,7 +892,10 @@ function PlayerApp() {
                   title={isVideo ? t("loop.entireVideoTitle") : t("loop.entireAudioTitle")}
                 >
                   <span>{isVideo ? t("loop.entireVideo") : t("loop.entireAudio")}</span>
-                  <small>{store.loop.mode === "media" && t("loop.current")}{formatTime(store.duration)}</small>
+                  <small>
+                    <span className="loop-current-marker" aria-hidden={store.loop.mode !== "media"}>{t("loop.current")}</span>
+                    {formatTime(store.duration)}
+                  </small>
                 </button>
                 <button
                   type="button"
@@ -816,11 +903,11 @@ function PlayerApp() {
                   aria-pressed={store.loop.mode === "segment"}
                   onClick={() => setLoopMode("segment")}
                   disabled={!currentSegment}
-                  title={t("loop.currentSegmentTitle")}
+                  title={t("loop.currentSegmentTitle", { shortcut: formatShortcut(store.preferences.shortcuts.toggleLoopRange) })}
                 >
                   <span>{t("loop.currentSegment")}</span>
                   <small>
-                    {store.loop.mode === "segment" && t("loop.current")}
+                    <span className="loop-current-marker" aria-hidden={store.loop.mode !== "segment"}>{t("loop.current")}</span>
                     {currentSegment ? `${formatTime(currentSegment.replayStart)}–${formatTime(currentSegment.end)}` : t("loop.noSegments")}
                   </small>
                 </button>
@@ -845,6 +932,8 @@ function PlayerApp() {
         />
       )}
 
+      {helpDialog}
+
       {settingsOpen && (
         <SettingsModal
           appVersion={appVersion}
@@ -852,12 +941,18 @@ function PlayerApp() {
           language={store.preferences.language}
           speed={store.preferences.speed}
           loopGap={store.preferences.loopGap}
+          shortcuts={store.preferences.shortcuts}
           cacheStats={cacheStats}
           cacheClearing={cacheClearing}
           cacheDisabled={store.isAnalyzing}
           onLanguageChange={(language) => store.setPreferences({ language })}
           onSpeedChange={(speed) => store.setPreferences({ speed })}
           onLoopGapChange={updateLoopGap}
+          onShortcutChange={(action, shortcut) => store.setPreferences({ shortcuts: { ...store.preferences.shortcuts, [action]: shortcut } })}
+          onResetPreferences={() => {
+            store.resetPreferences();
+            updateLoopGap(0);
+          }}
           onClearCache={() => void clearAnalysisCache()}
           onClose={closeSettings}
         />
@@ -900,15 +995,7 @@ function PlayerApp() {
         </>
       )}
 
-      {store.error && (
-        <div className="error-toast" role="alert">
-          <span>
-            <strong>{t(ERROR_MESSAGE_KEYS[store.error.code] ?? "error.unknown")}</strong>
-            {store.error.detail && <small>{store.error.detail}</small>}
-          </span>
-          <button onClick={() => store.setError(null)} aria-label={t("error.dismiss")}>×</button>
-        </div>
-      )}
+      {errorToast}
     </main>
   );
 }

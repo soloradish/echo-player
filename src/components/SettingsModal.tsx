@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import { LANGUAGE_OPTIONS, useI18n } from "../i18n";
-import type { AppLocale, CacheStats } from "../types";
+import { formatShortcut, SHORTCUT_ACTIONS, shortcutFromKeyboardEvent } from "../lib/shortcuts";
+import type { AppLocale, CacheStats, ShortcutAction, ShortcutBindings } from "../types";
 
 const PLAYBACK_SPEEDS = [0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1, 1.1, 1.2, 1.25, 1.5, 1.75, 2];
 
@@ -11,12 +12,15 @@ interface SettingsModalProps {
   language: AppLocale;
   speed: number;
   loopGap: number;
+  shortcuts: ShortcutBindings;
   cacheStats: CacheStats | null;
   cacheClearing: boolean;
   cacheDisabled: boolean;
   onLanguageChange: (language: AppLocale) => void;
   onSpeedChange: (speed: number) => void;
   onLoopGapChange: (gap: number) => void;
+  onShortcutChange: (action: ShortcutAction, shortcut: string) => void;
+  onResetPreferences: () => void;
   onClearCache: () => void;
   onClose: () => void;
 }
@@ -27,18 +31,31 @@ export function SettingsModal({
   language,
   speed,
   loopGap,
+  shortcuts,
   cacheStats,
   cacheClearing,
   cacheDisabled,
   onLanguageChange,
   onSpeedChange,
   onLoopGapChange,
+  onShortcutChange,
+  onResetPreferences,
   onClearCache,
   onClose,
 }: SettingsModalProps) {
   const { t, formatNumber, formatSeconds } = useI18n();
   const panelRef = useRef<HTMLElement>(null);
   const firstControlRef = useRef<HTMLSelectElement>(null);
+  const [recordingAction, setRecordingAction] = useState<ShortcutAction | null>(null);
+  const [shortcutError, setShortcutError] = useState<string | null>(null);
+
+  const shortcutLabels = {
+    playPause: t("settings.shortcutPlayPause"),
+    previousSegment: t("settings.shortcutPreviousSegment"),
+    nextSegment: t("settings.shortcutNextSegment"),
+    replaySegment: t("settings.shortcutReplaySegment"),
+    toggleLoopRange: t("settings.shortcutToggleLoopRange"),
+  } satisfies Record<ShortcutAction, string>;
 
   useEffect(() => {
     firstControlRef.current?.focus();
@@ -70,6 +87,34 @@ export function SettingsModal({
 
   const closeFromBackdrop = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) onClose();
+  };
+
+  const captureShortcut = (action: ShortcutAction, event: KeyboardEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.key === "Escape") {
+      setRecordingAction(null);
+      setShortcutError(null);
+      return;
+    }
+    if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) return;
+
+    const shortcut = shortcutFromKeyboardEvent(event.nativeEvent);
+    if (!shortcut) {
+      setShortcutError(t("settings.shortcutUnsupported"));
+      return;
+    }
+    const conflict = SHORTCUT_ACTIONS.find((candidate) => candidate !== action && shortcuts[candidate] === shortcut);
+    if (conflict) {
+      setShortcutError(t("settings.shortcutConflict", {
+        shortcut: formatShortcut(shortcut),
+        action: shortcutLabels[conflict],
+      }));
+      return;
+    }
+    onShortcutChange(action, shortcut);
+    setRecordingAction(null);
+    setShortcutError(null);
   };
 
   return (
@@ -109,6 +154,33 @@ export function SettingsModal({
                 ))}
               </select>
             </label>
+          </fieldset>
+
+          <fieldset className="settings-group settings-shortcut-group">
+            <legend>{t("settings.shortcutsGroup")}</legend>
+            <p>{t("settings.shortcutsDescription")}</p>
+            <div className="settings-shortcut-list">
+              {SHORTCUT_ACTIONS.map((action) => (
+                <div className="settings-shortcut-row" key={action}>
+                  <span>{shortcutLabels[action]}</span>
+                  <button
+                    type="button"
+                    className={recordingAction === action ? "recording" : ""}
+                    aria-label={t("settings.shortcutChange", { action: shortcutLabels[action] })}
+                    aria-pressed={recordingAction === action}
+                    onClick={() => {
+                      setRecordingAction(action);
+                      setShortcutError(null);
+                    }}
+                    onKeyDown={(event) => recordingAction === action && captureShortcut(action, event)}
+                  >
+                    {recordingAction === action ? t("settings.shortcutPress") : formatShortcut(shortcuts[action])}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <small className="settings-shortcut-help">{t("settings.shortcutHelp")}</small>
+            {shortcutError && <small className="settings-shortcut-error" role="alert">{shortcutError}</small>}
           </fieldset>
 
           <fieldset className="settings-group">
@@ -168,12 +240,15 @@ export function SettingsModal({
             </label>
           </fieldset>
         </div>
-        <footer className="settings-version" data-testid="settings-version">
-          {isDevelopmentBuild
-            ? t("settings.developmentVersion")
-            : appVersion
-              ? t("settings.version", { version: appVersion })
-              : t("settings.versionUnavailable")}
+        <footer className="settings-footer">
+          <button type="button" className="settings-reset" onClick={onResetPreferences}>{t("settings.restoreDefaults")}</button>
+          <span className="settings-version" data-testid="settings-version">
+            {isDevelopmentBuild
+              ? t("settings.developmentVersion")
+              : appVersion
+                ? t("settings.version", { version: appVersion })
+                : t("settings.versionUnavailable")}
+          </span>
         </footer>
       </section>
     </div>

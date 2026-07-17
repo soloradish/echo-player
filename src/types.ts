@@ -41,7 +41,17 @@ export interface PlayerPreferences {
   speed: number;
   loopGap: number;
   language: AppLocale;
+  shortcuts: ShortcutBindings;
 }
+
+export type ShortcutAction =
+  | "playPause"
+  | "previousSegment"
+  | "nextSegment"
+  | "replaySegment"
+  | "toggleLoopRange";
+
+export type ShortcutBindings = Record<ShortcutAction, string>;
 
 export type AppLocale = "zh-CN" | "zh-Hant" | "en" | "fr";
 

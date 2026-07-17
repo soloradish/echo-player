@@ -38,4 +38,17 @@ describe("Echo Player Windows application", () => {
     expect(normalizeWindowsPath(context.selected.path)).toBe(normalizeWindowsPath(fixture));
     expect(context.playlist.some((item) => normalizeWindowsPath(item.path) === normalizeWindowsPath(fixture))).toBe(true);
   });
+
+  it("shows explicit file and support entry points without launching an external browser", async () => {
+    const wordmark = $(".wordmark");
+    expect(await wordmark.getTagName()).toBe("span");
+    await expect($(".open-file-button")).toBeDisplayed();
+
+    await $(".help-button").click();
+    await expect($(".help-modal")).toBeDisplayed();
+    expect(await $$(".help-actions button").length).toBe(3);
+
+    await $(".help-modal-header button").click();
+    await expect($(".help-modal")).not.toBeDisplayed();
+  });
 });

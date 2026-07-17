@@ -1,0 +1,46 @@
+name: Feature request
+description: Suggest an improvement to a language-learning workflow
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing an idea. Describe the learning workflow and outcome rather than only the control or screen you want added.
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: Existing requests
+      options:
+        - label: I searched the existing issues and did not find the same request.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Learning problem or use case
+      description: What are you trying to learn or do, and what is difficult today?
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Desired workflow
+      description: Describe how you expect Echo Player to behave.
+    validations:
+      required: true
+  - type: textarea
+    id: value
+    attributes:
+      label: Expected benefit
+      description: How would this improve repetition, listening, navigation, or another learning task?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional. Describe any workaround or alternative design you have tried.
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Optional. Add non-sensitive examples, sketches, or related links.

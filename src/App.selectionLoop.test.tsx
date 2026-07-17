@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { usePlayerStore } from "./store";
+import { DEFAULT_SHORTCUTS } from "./lib/shortcuts";
 import type { LoopState } from "./types";
 
 let mediaPaused = true;
@@ -50,7 +51,7 @@ beforeEach(() => {
   playMock.mockClear();
   pauseMock.mockClear();
   localStorage.clear();
-  usePlayerStore.setState({ preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "zh-CN" } });
+  usePlayerStore.setState({ preferences: { volume: 0.85, speed: 1, loopGap: 0, language: "zh-CN", shortcuts: { ...DEFAULT_SHORTCUTS } } });
   window.history.pushState({}, "", "/?demo=1");
 });
 
@@ -168,7 +169,7 @@ describe("selection loop workbench", () => {
     mediaPaused = false;
 
     selectAndStart(waveform, 10, 30);
-    fireEvent.keyDown(window, { key: "l" });
+    fireEvent.keyDown(window, { key: "s", code: "KeyS" });
     expect(usePlayerStore.getState().loop.mode).toBe("selection");
 
     fireEvent.keyDown(window, { key: "Escape" });

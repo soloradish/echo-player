@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { loadPlayerPreferences, usePlayerStore } from "./store";
+import { DEFAULT_SHORTCUTS } from "./lib/shortcuts";
 
 describe("player store boundaries", () => {
   beforeEach(() => usePlayerStore.getState().clearMedia());
@@ -13,6 +14,7 @@ describe("player store boundaries", () => {
       speed: 1,
       loopGap: 0,
       language: "en",
+      shortcuts: DEFAULT_SHORTCUTS,
     });
   });
 

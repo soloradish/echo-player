@@ -4,6 +4,13 @@ All notable changes to Echo Player are documented here.
 
 ## [Unreleased]
 
+- Added customizable shortcuts for play/pause, speech-segment navigation, replay, and loop-range switching.
+- Added a Settings action that restores playback, language, and keyboard preferences to their defaults.
+- Moved the default segment and loop shortcuts to A, D, and S, and prevented player shortcuts from activating or leaving focus on buttons.
+- Stabilized the playback controls so switching loop ranges no longer shifts the centered panel horizontally.
+- Added a clearly labeled open-file action plus localized Help and Feedback links for bug reports, feature requests, and the Echo Player project page.
+- Added structured GitHub Issue Forms and a narrowly scoped Tauri external-link permission.
+
 ## [0.1.0] - 2026-07-16
 
 - Added synchronized application version tooling and guarded tagged-release validation.

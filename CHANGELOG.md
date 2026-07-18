@@ -4,6 +4,8 @@ All notable changes to Sylloop are documented here.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-17
+
 - Added official unsigned macOS 11+ DMGs for Apple Silicon and Intel, including bundled LGPL FFmpeg builds and native release smoke tests.
 
 ## [0.3.0] - 2026-07-17
@@ -33,7 +35,8 @@ All notable changes to Sylloop are documented here.
 - Bundled a pinned LGPL FFmpeg build for offline analysis.
 - Added native Windows E2E, dependency audits, and unsigned installer smoke tests.
 
-[Unreleased]: https://github.com/soloradish/sylloop/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/soloradish/sylloop/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/soloradish/sylloop/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/soloradish/sylloop/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/soloradish/sylloop/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/soloradish/sylloop/tree/v0.1.0

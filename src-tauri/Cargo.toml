@@ -1,6 +1,6 @@
 [package]
 name = "sylloop"
-version = "0.3.0"
+version = "0.4.0"
 description = "A focused media player for language learners"
 authors = ["Sylloop contributors"]
 edition = "2021"

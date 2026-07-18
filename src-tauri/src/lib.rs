@@ -24,6 +24,7 @@ const CACHE_SCHEMA_VERSION: u32 = 1;
 const CACHE_LIMIT_BYTES: u64 = 512 * 1024 * 1024;
 const PROGRESS_INTERVAL: Duration = Duration::from_millis(100);
 const FFMPEG_STDERR_LIMIT: usize = 64 * 1024;
+#[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -750,11 +751,9 @@ fn file_identity(path: &Path) -> Result<FileIdentity, CommandError> {
         .and_then(|modified| modified.duration_since(UNIX_EPOCH).ok())
         .map(|duration| duration.as_nanos().min(u64::MAX as u128) as u64)
         .unwrap_or_default();
-    let mut normalized = path.to_string_lossy().into_owned();
+    let normalized = path.to_string_lossy().into_owned();
     #[cfg(windows)]
-    {
-        normalized = normalized.to_lowercase();
-    }
+    let normalized = normalized.to_lowercase();
     let cache_key = format!("{:x}", Sha256::digest(normalized.as_bytes()));
     Ok(FileIdentity {
         path,

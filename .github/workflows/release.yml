@@ -160,6 +160,8 @@ jobs:
         run: |
           rustup show
           npm ci
+      - name: Prepare pinned FFmpeg
+        run: npm run ffmpeg:prepare
       - name: Build unsigned macOS DMG
         run: npm run tauri:build
       - name: Validate DMG and bundled FFmpeg

@@ -577,10 +577,14 @@ fn read_bounded<R: Read>(mut reader: R, limit: usize) -> Vec<u8> {
 }
 
 fn bundled_ffmpeg_path(app: &AppHandle) -> Option<PathBuf> {
+    #[cfg(windows)]
+    let executable_name = "ffmpeg.exe";
+    #[cfg(not(windows))]
+    let executable_name = "ffmpeg";
     app.path()
         .resource_dir()
         .ok()
-        .map(|root| root.join("resources").join("ffmpeg.exe"))
+        .map(|root| root.join("resources").join(executable_name))
         .filter(|path| path.is_file())
 }
 
